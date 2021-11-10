@@ -4,6 +4,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.util.Optional;
 
 import lesson7.constants.Constants;
 
@@ -46,13 +47,14 @@ public class ClientHandler {
             String str = in.readUTF();
             if (str.startsWith(Constants.AUTH_COMMAND)) {
                 String[] tokens = str.split("\\s+");    //3
-                String nick = server.getAuthService().getNickByLoginAndPass(tokens[1], tokens[2]);
-                if (nick != null) {
+                Optional<String> nick = server.getAuthService().getNickByLoginAndPass(tokens[1], tokens[2]);
+                if (nick.isPresent()) {
                     //Дописать проверку что такого ника нет в чате(*)
                     //Авторизовались
-                    name = nick;
+                    name = nick.get();
                     sendMessage(Constants.AUTH_OK_COMMAND + " " + nick);
                     server.broadcastMessage(nick + " вошел в чят");
+                    server.broadcastMessage(server.getActiveClients());
                     server.subscribe(this);
                     return;
                 } else {
@@ -74,14 +76,21 @@ public class ClientHandler {
         while (true) {
             String messageFromClient = in.readUTF();
             //hint: можем получать команду
+            if (messageFromClient.startsWith(Constants.CLIENTS_LIST_COMMAND)) {
+                sendMessage(server.getActiveClients());
+            } else {
 
-
-            System.out.println("Сообщение от " + name + ": " + messageFromClient);
-            if (messageFromClient.equals(Constants.END_COMMAND)) {
-                break;
+                System.out.println("Сообщение от " + name + ": " + messageFromClient);
+                if (messageFromClient.equals(Constants.END_COMMAND)) {
+                    break;
+                }
+                server.broadcastMessage(name + ": " + messageFromClient);
             }
-            server.broadcastMessage(name + ": " + messageFromClient);
         }
+    }
+
+    public String getName() {
+        return name;
     }
 
     private void closeConnection() {

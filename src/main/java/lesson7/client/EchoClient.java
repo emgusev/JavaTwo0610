@@ -26,6 +26,8 @@ public class EchoClient extends JFrame {
     private Socket socket;
     private DataInputStream dataInputStream;
     private DataOutputStream dataOutputStream;
+    private String login;
+
 
     public EchoClient() {
         try {
@@ -46,9 +48,17 @@ public class EchoClient extends JFrame {
                     String messageFromServer = dataInputStream.readUTF();
                     if (messageFromServer.equals("/end")) {
                         break;
+                    } else if(messageFromServer.startsWith(Constants.AUTH_OK_COMMAND)) {
+                        String[] tokens = messageFromServer.split("\\s+");
+                        this.login = tokens[1];
+                        textArea.append("Успешно авторизован как " + login);
+                        textArea.append("\n");
+                    }else if (messageFromServer.startsWith(Constants.CLIENTS_LIST_COMMAND)) {
+                        //список клиентов
+                    } else {
+                        textArea.append(messageFromServer);
+                        textArea.append("\n");
                     }
-                    textArea.append(messageFromServer);
-                    textArea.append("\n");
                 }
                 textArea.append("Соединение разорвано");
                 textField.setEnabled(false);
@@ -86,7 +96,7 @@ public class EchoClient extends JFrame {
             dataOutputStream.writeUTF(textField.getText());
             textField.setText("");
             textField.grabFocus();
-        }catch (Exception ex) {
+        } catch (Exception ex) {
             ex.printStackTrace();
         }
     }
@@ -123,7 +133,7 @@ public class EchoClient extends JFrame {
             @Override
             public void actionPerformed(ActionEvent e) {
                 try {
-                    dataOutputStream.writeUTF(Constants.AUTH_COMMAND +" " + loginField.getText() + " " + passField.getText());
+                    dataOutputStream.writeUTF(Constants.AUTH_COMMAND + " " + loginField.getText() + " " + passField.getText());
                 } catch (IOException ioException) {
                     ioException.printStackTrace();
                 }
@@ -133,7 +143,7 @@ public class EchoClient extends JFrame {
         button.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                 sendMessage();
+                sendMessage();
             }
         });
         textField.addActionListener(new ActionListener() {
